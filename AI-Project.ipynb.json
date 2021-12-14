@@ -1,0 +1,905 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 677,
+   "id": "c3ffae63",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import tensorflow as tf\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import os\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "from tensorflow.keras.utils import to_categorical\n",
+    "from tensorflow.keras.preprocessing.image import load_img, img_to_array\n",
+    "from tensorflow.python.keras.preprocessing.image import ImageDataGenerator\n",
+    "\n",
+    "from sklearn.metrics import classification_report, log_loss, accuracy_score\n",
+    "from sklearn.model_selection import train_test_split"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "abf0396b",
+   "metadata": {},
+   "source": [
+    "AI Project Mathematical handwritten symbols prediction"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f3cf5c4b",
+   "metadata": {},
+   "source": [
+    "Divide into training and test datasets"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 678,
+   "id": "0fba0daa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "directory = '../drissjd/Desktop/dataset'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 679,
+   "id": "d5321361",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['beta', 'does NOT belong to', 'for all elements', 'Set of integers', 'division', 'mu', 'mul', 'R numbers set', 'belongs to', 'pourcentage', 'right-bracket', 'left-bracket', 'almost equal', 'intersection', 'sigma', 'pi', 'substraction', 'equivalence', 'dec', 'equal', 'union', 'fi', 'omega', 'alpha', 'integral', 'different than', 'addition']\n",
+      "27\n"
+     ]
+    }
+   ],
+   "source": [
+    "Name=[]\n",
+    "for file in os.listdir(directory):\n",
+    "    if file!='.directory' and file!='.DS_Store':\n",
+    "        Name+=[file]\n",
+    "print(Name)\n",
+    "print(len(Name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 680,
+   "id": "1b4194f8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "N=[]\n",
+    "for i in range(len(Name)):\n",
+    "    N+=[i]\n",
+    "    \n",
+    "normal_mapping=dict(zip(Name,N)) \n",
+    "reverse_mapping=dict(zip(N,Name)) \n",
+    "\n",
+    "def mapper(value):\n",
+    "    return reverse_mapping[value]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 729,
+   "id": "e4dfe065",
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "97\n",
+      "134\n",
+      "211\n",
+      "102\n",
+      "557\n",
+      "110\n",
+      "567\n",
+      "175\n",
+      "132\n",
+      "89\n",
+      "33\n",
+      "120\n",
+      "205\n",
+      "105\n",
+      "255\n",
+      "153\n",
+      "625\n",
+      "120\n",
+      "624\n",
+      "630\n",
+      "93\n",
+      "134\n",
+      "161\n",
+      "108\n",
+      "350\n",
+      "106\n",
+      "567\n"
+     ]
+    }
+   ],
+   "source": [
+    "dataset=[]\n",
+    "testset=[]\n",
+    "count=0\n",
+    "for name in Name:\n",
+    "    path=os.path.join(directory,name)\n",
+    "    t=0\n",
+    "    for im in os.listdir(path):\n",
+    "        if im[-4:]=='.jpg':\n",
+    "            image=load_img(os.path.join(path,im), grayscale=False, color_mode='rgb', target_size=(32,32))\n",
+    "            image=img_to_array(image)\n",
+    "            image=image/255.0\n",
+    "            if t<255:\n",
+    "                dataset.append([image,count])\n",
+    "            else:   \n",
+    "                testset.append([image,count])\n",
+    "            t+=1\n",
+    "    print(t)\n",
+    "    count=count+1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 730,
+   "id": "ca5e08ad",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data,labels0=zip(*dataset)\n",
+    "test,tlabels0=zip(*testset)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 731,
+   "id": "61ca2f37",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labels1=to_categorical(labels0)\n",
+    "data=np.array(data)\n",
+    "labels=np.array(labels1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 732,
+   "id": "d901e07e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tlabels1=to_categorical(tlabels0)\n",
+    "test=np.array(test)\n",
+    "tlabels=np.array(tlabels1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 733,
+   "id": "232c7ccc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "trainx,testx,trainy,testy=train_test_split(data,labels,test_size=0.2,random_state=44)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 734,
+   "id": "ddaf3a2b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(3542, 32, 32, 3)\n",
+      "(886, 32, 32, 3)\n",
+      "(3542, 27)\n",
+      "(886, 27)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(trainx.shape)\n",
+    "print(testx.shape)\n",
+    "print(trainy.shape)\n",
+    "print(testy.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 735,
+   "id": "e8b188c1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "datagen = ImageDataGenerator(horizontal_flip=True,vertical_flip=True,rotation_range=20,zoom_range=0.2,\n",
+    "                        width_shift_range=0.2,height_shift_range=0.2,shear_range=0.1,fill_mode=\"nearest\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 736,
+   "id": "8090e6f5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pretrained_model3 = tf.keras.applications.DenseNet201(input_shape=(32,32,3),include_top=False,weights='imagenet',pooling='avg')\n",
+    "pretrained_model3.trainable = False"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 737,
+   "id": "a1d73151",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "inputs3 = pretrained_model3.input\n",
+    "x3 = tf.keras.layers.Dense(128, activation='relu')(pretrained_model3.output)\n",
+    "outputs3 = tf.keras.layers.Dense(27, activation='softmax')(x3)\n",
+    "model = tf.keras.Model(inputs=inputs3, outputs=outputs3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 738,
+   "id": "bf67d63f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 739,
+   "id": "a6318401",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/10\n",
+      "111/111 [==============================] - 23s 149ms/step - loss: 1.5124 - accuracy: 0.5861 - val_loss: 0.8723 - val_accuracy: 0.7562\n",
+      "Epoch 2/10\n",
+      "111/111 [==============================] - 14s 130ms/step - loss: 0.8737 - accuracy: 0.7431 - val_loss: 0.5994 - val_accuracy: 0.8318\n",
+      "Epoch 3/10\n",
+      "111/111 [==============================] - 14s 130ms/step - loss: 0.6946 - accuracy: 0.7931 - val_loss: 0.5888 - val_accuracy: 0.8228\n",
+      "Epoch 4/10\n",
+      "111/111 [==============================] - 15s 132ms/step - loss: 0.6471 - accuracy: 0.7990 - val_loss: 0.5007 - val_accuracy: 0.8510\n",
+      "Epoch 5/10\n",
+      "111/111 [==============================] - 15s 135ms/step - loss: 0.6036 - accuracy: 0.8114 - val_loss: 0.5376 - val_accuracy: 0.8115\n",
+      "Epoch 6/10\n",
+      "111/111 [==============================] - 16s 142ms/step - loss: 0.5638 - accuracy: 0.8252 - val_loss: 0.4217 - val_accuracy: 0.8736\n",
+      "Epoch 7/10\n",
+      "111/111 [==============================] - 16s 140ms/step - loss: 0.5084 - accuracy: 0.8430 - val_loss: 0.4580 - val_accuracy: 0.8713\n",
+      "Epoch 8/10\n",
+      "111/111 [==============================] - 15s 138ms/step - loss: 0.4913 - accuracy: 0.8405 - val_loss: 0.4000 - val_accuracy: 0.8702\n",
+      "Epoch 9/10\n",
+      "111/111 [==============================] - 15s 135ms/step - loss: 0.4779 - accuracy: 0.8450 - val_loss: 0.3952 - val_accuracy: 0.8657\n",
+      "Epoch 10/10\n",
+      "111/111 [==============================] - 15s 135ms/step - loss: 0.4861 - accuracy: 0.8329 - val_loss: 0.3954 - val_accuracy: 0.8702\n"
+     ]
+    }
+   ],
+   "source": [
+    "his=model.fit(datagen.flow(trainx,trainy,batch_size=32),validation_data=(testx,testy),epochs=10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 740,
+   "id": "d921335d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "              precision    recall  f1-score   support\n",
+      "\n",
+      "           0       0.54      0.47      0.50        15\n",
+      "           1       0.77      0.93      0.84        29\n",
+      "           2       0.84      1.00      0.91        32\n",
+      "           3       0.72      0.72      0.72        18\n",
+      "           4       0.97      0.84      0.90        45\n",
+      "           5       0.95      0.76      0.84        25\n",
+      "           6       0.94      0.98      0.96        59\n",
+      "           7       1.00      0.87      0.93        39\n",
+      "           8       0.81      0.91      0.85        32\n",
+      "           9       1.00      0.91      0.95        22\n",
+      "          10       0.00      0.00      0.00         8\n",
+      "          11       0.74      0.88      0.81        26\n",
+      "          12       0.98      0.91      0.94        46\n",
+      "          13       0.00      0.00      0.00        18\n",
+      "          14       0.78      0.90      0.83        39\n",
+      "          15       0.89      0.93      0.91        27\n",
+      "          16       0.94      1.00      0.97        49\n",
+      "          17       0.94      0.94      0.94        35\n",
+      "          18       1.00      1.00      1.00        51\n",
+      "          19       0.98      0.91      0.94        53\n",
+      "          20       0.40      0.57      0.47        21\n",
+      "          21       0.83      0.86      0.84        22\n",
+      "          22       0.86      0.91      0.89        34\n",
+      "          23       0.74      0.70      0.72        20\n",
+      "          24       0.95      0.87      0.91        45\n",
+      "          25       1.00      0.88      0.94        26\n",
+      "          26       0.89      1.00      0.94        50\n",
+      "\n",
+      "    accuracy                           0.87       886\n",
+      "   macro avg       0.79      0.80      0.80       886\n",
+      "weighted avg       0.86      0.87      0.86       886\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "y_pred=model.predict(testx)\n",
+    "pred=np.argmax(y_pred,axis=1)\n",
+    "ground = np.argmax(testy,axis=1)\n",
+    "print(classification_report(ground,pred))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 741,
+   "id": "147c3fa0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAA8ElEQVR4nO2WMa6DMAyGbcMEyhnYOApX4m7MiDswcQlYUPL7Danaqqoa572it8RDhsjx5/x25LCq0pUml0YvgAIogAL4CgDAtQCRNw5Z1ARgHMeXnWEYpmmyAzg5D0TknvK+7845731VVUZAusjrujLzeZ4AnHNEZI9ORKQfLYQQ02+aZlmW6B9C+Hzq2dISERGAmLWIeO+Z2X4B0zsQka7riKjv+6zoZCnyzY85rqoKwI6x3qCu66ipMW4GYNs2VZ3nGUAseFYXpSWKatyVYebjONq2/RpAREIIubV9HE96APjL78/aRb+2/54HBUD0A5YWufMaCm86AAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x153C52760>"
+      ]
+     },
+     "execution_count": 741,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/dataset/mul/1435.jpg\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 742,
+   "id": "b033dda0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/dataset/mul/1435.jpg\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 743,
+   "id": "5442e8df",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is mul.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 777,
+   "id": "9f8aeecd",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABiElEQVR4nO2WsW7CMBCGfzsgZoTERFkQlVIGBjoxscEj0Adh4wUYMjGz8ww8S5FCqFpQK8SQJcU+d0ihqeMkRKJDpfzKkvy++3Kx7xQmlQAAgCkOg5RiKtmFYhS9ZYoBLPrEHHZDFYBMlZIMpZRlWSmRRJTiXmSuoN/vh9krlYr3spFKUETfkZzbtp1NkEqElxbfarWIiEhq7kXdblfLIJUgktoyHdDpdAAsFovzgkQAES2XSwD2g50CYFqjcc7L5XIQBOcKMxqtfd9eP68jSfRGMwB+7152J1us1LhrbDz3DwHhThgBhjDO8zVH77GX4uq5ms1mruwAxk/jHADXdZGziGq1mgMA4HQ6AVitVlcChBD5AGEPj0ajKwG73S7F1U/RD5lzAETy9qco1Hw+z3z36XQaZv8UQeKi+CzShpLRHQ6H8QwZo+J9/+H7vu/7x+Nxu916nnc4HBzHedu/1uv16Ce68ozNZrPJZIILIL3EeGVJYozVarXBYGAedjEVfxUFoAD8A8AXhUuy4xrwijoAAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x16FFFE700>"
+      ]
+     },
+     "execution_count": 777,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/sigma.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 778,
+   "id": "f9bf2d2f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/sigma.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 779,
+   "id": "3c66aa1b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is omega.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 747,
+   "id": "3c116589",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAAzElEQVR4nO2V0QqCMBSG/yNemL6APdPAXsC38qmKHqO6lzWxMc+6EK3mKJQCg30Ig53DvjORX2JmvEIWlgCwJWefAHKaLTEAshEm9CVP4bvME0TR7IFWdoMgCIIgWKcg7hetdZIkTi3f5ufLydkUQlRVVde1lFIpdW1k2950q40xALIsK8vyuZ/GuF4QZF7GA9245oHNcJViVxyO+86a/mHunE5mHkoPHF88HaFRjfeHs4z//4qCIAiCYI2CNE1n9XvC7g3TsPzIz1/RHSmXciJ/z5/qAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x1528B61F0>"
+      ]
+     },
+     "execution_count": 747,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/plus.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 748,
+   "id": "edd41435",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/plus.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 749,
+   "id": "04dbf56b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is addition.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 768,
+   "id": "c9f3fa70",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAB5klEQVR4nLWWP68BQRDAdy8huAgrSCQSepVOolfoqTU+g0Kv0GlUvoAvoKDXqVRCoyMuXCHRuNtXzMvm3O3OrX15U83Nn/3NztzeHuWck/8UC/GtVisakMFgYELgEZlOp7FZtm1HE6XyAajVaio2PHa73RDpdDrhAKqaAaUfrtAjWIKlqPaKzQAXsbMQzASAFMg5b7VahJBOp4MVIhlOwDWfz5FIgZe7dACFQgEHQPxoNIratYYMLVZF4jHmQ9YUXUC1Wo2NuV6v5oBKpYJ4oT/lctkckM1mVS5Y9/l8yt06bxFEuq4bDdtsNjHr6ANAlsslGHe7XWyVXwD6/b6qRcjqnHPdGRSLxfv9DrrjOJ7nSfcXFV1AOp1mjL1eL4BZlm6iblwmkyGEpFIpKBn5fP4JACIY7/f7XwCCkUgkHMcxB9xuN6Hbth3yAqNUKm23W0PA+XwWuvQkA6Pdbi8WCxPA8XgUOmNMGgOM4XA4mUy+BhwOB6HncjlVGDDG4/FsNpO7VSe51+sJPfb3BFZbr9dhO5LQaDSE/ng8cIBg+L4fNGJXpmVZnucRQvL5vOu6SDODWeTz4sRm4Ps+KPhtE00JnnOtg1av1zUBlNJms0kISSaTvyakoYwx0C+XS+wAQrn7/R70H+TtdafapJtJAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x15612E910>"
+      ]
+     },
+     "execution_count": 768,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/R.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 769,
+   "id": "ae7e1f18",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/R.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 770,
+   "id": "8519dc4c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is R numbers set.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 771,
+   "id": "670eebc1",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAAl0lEQVR4nO2TsQ0DIQxFIToq9mQNWAmJDdiABZBuAigQxhROczldEaWIDqWIf2Us6z/bMpKIxEo9lroz4D8A2xlJKe8yvZ7+8gkkf7SfA7a32d57zrm1BgBjjDknIgJArTXGWEoJIXwwtdY6544HERFRSunGrpVS9NKxon3fv/PSWhtjvPd0ESKeBXymDGAAAxjAACGEeAJtj1abKm+BvAAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x1570A3490>"
+      ]
+     },
+     "execution_count": 771,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/=.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 772,
+   "id": "d7d0a537",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/=.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 773,
+   "id": "fc6af8d7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is equal.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 774,
+   "id": "6343ea24",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABrklEQVR4nK2UMe4BQRTG30wrSDiAUiIUShfYuIPCETQbiQNINArlFgpEsoU4gAalSNhE6QAqkVha71+s/xizY3dmd15l37z5ft/3YpcgIhit+/2ey+XYIwWAcrlcr9eNqFNK8/k8IWQwGLxbj8cj+NFqtTBddbtdHhY0gV+R53lpAEKaD4A/W61WRtSZzhuw3W4FslZNJhOp/Q8AESmlwZllWSnt73Y7CeB8PrMJ3/fV1S+Xyy/7XwBE7HQ6bOj1eiWzL57+mi4UCirq8/mcV6/VajGA8XjMptfrta795/MZAxDuRKsfj8fo/cgBYV/SajabQud0OqkC2u22CiPW/k+AYgi+ZrOZHsC27fT2owCIyH/DS6USf7RYLHj1w+GQBIDfi9psNqxfrVZV7McD+v2+VIhvFovF5ABBazgchpuj0SgV4Hq9CiF6vZ7ifpQAiJjNZpnccrnMZDKGAb7vi//K/2o0GgYAiFipVKQA13WjLxJUfmkJIeFm7HWqqA4A+/1efZiVRgKQhTCZAAAcx9GaB90EEAphOEGC0gZMp1P+8Xa7Rc9rrwi+txR7/Q+RZMQKgUT/ugAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x170011040>"
+      ]
+     },
+     "execution_count": 774,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/A.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 775,
+   "id": "ca8ca580",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/A.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 776,
+   "id": "5196589a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is for all elements.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 787,
+   "id": "4fe919db",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAB0ElEQVR4nNWWvarCQBCFd5PrWqQUtBAEG5uUop1YW/gUFjY+gI21hU9iY2FnUtkETGMrCIIQ0ELEItgYsreYsK7ZJG7izQVPlUx2vzOTmfxgSinKU0qu9P8w+GFHGGP5bf1+fzabTafT2+3m+z7GmBCi6/pkMlFVlV+J+R6k8pARpVQJnaeSYRitVosnOI7T6XRiK8gmVjdDQUTTNNd1P20ysLbbbYheLpdd1w1sMwuI3W43FOGxGQ3W6zWADMNIoFNKn2MqL03T7vc74m46iuoEKLVBJAiCqqp6nhdan6LJx+MRQNVqldE3mw0Em82mSA8SkZFlWbB+MBiw4Pl8hqBlWXEbpQwIIWI2lUpFJsX3PUi46Uhoqag3PRBB1+sVghhLvQWSDADUaDQo95SWSiWE0OVy8X3/LT1ITdRut4Ori8UCIo/HI3lLnCJW7/d7ALXbbYjYth3Uqyip6BEGjD6fzyFSLBYzJM700ijP8wqFAhJevEhiWuIU8UX7Qzripwhwh8OBPx0Oh5/QnwZs5ur1OuJydxynVqvhNCKEjEajZ96QYB6f+5cKKKXL5dI0Tdu2T6cTDMB4PI4tXFF6vd5qtYqdzlAF+en7fx2/3+AXwKsTFQizMxAAAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x16EED54F0>"
+      ]
+     },
+     "execution_count": 787,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/Z.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 788,
+   "id": "1b4fa730",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/Z.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 789,
+   "id": "5426819c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is Set of integers.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 799,
+   "id": "e4897aca",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABIUlEQVR4nM1Wuw2FMAzET69CYgZEwRpswAKIEWARKioGYBAGoGEAGmYA0SHyikhRcL4E0OMqK/bl4vgiAEKI9yQ+j+7+AgEAAICzqRMC12ElIBphXdcbBJIkocEwDCjVNI2lgEfUYDVt26JUHMdGOoXVFXVdh1bGcbyzgyiKVCljB0AULxlZEJWxrIrO8Ceb1nVNgyzLxGye5ycUNLff9z2LpQNQ0Q/FGgE+5p16VYAywzBE24m7uwhs24aYZVmyFcsb5oFtSv0nXWQIgmBZFo0qD+yiqqpEDmuLYp5n/aaHwxmPIKe9/aH9X6AoCttSo8+kmKbJku44ZE9haBGPz+B7ka//bHj3duD7vrjoLsAfNk3Tfd+l/zLuQ7bEWx+aPX7aflFvOtMzyAAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x16EEBCF10>"
+      ]
+     },
+     "execution_count": 799,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/mu.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 800,
+   "id": "2c381733",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/mu.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 801,
+   "id": "d38e0156",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is mu.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 802,
+   "id": "3fa7e053",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABTElEQVR4nNVWPdJEQBDtMUVKldQJcAKJG7gGF5C4isgNJI7hICJKphS9wXzVdmdZvp0R7ItGm3mvfxkYxxF1I4oiWjMAAABEBE1g7IXT0MV7hJ8VME3zXoGiKMTiriJP02RZ1o0CRGiI56ZpdAnIyLIMAHzf1zJi8zwLWrJsvmsR8H1fYmPDMDiOA5rKII0xABi2bavzSkiSZJNERKnuKnin0jloQRDsWElNvcKCp6qqZ6POFO3ybCmq61qFvSzL/ReI6HkerRXzE8exbEfEvu8VBdI0PWJgQlyxDO/zRXhp0zzPvxMQaNt2R/s5gl0XTsE5X9f16OxfBGEY/peXINipUyQwkv2uDKehy58KOnCKJEkuJZb6qes6MnLOP9z46K8isK7rhw7eUiS2cs4vRnDuOwBIKTIMAxFd171CvSzLlYKxK5tU8LNXR8IDVyqvFs3kx78AAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x16FBD2670>"
+      ]
+     },
+     "execution_count": 802,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/U.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 803,
+   "id": "c142667e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/U.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 804,
+   "id": "e862bf3a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is union.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2c04326f",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
