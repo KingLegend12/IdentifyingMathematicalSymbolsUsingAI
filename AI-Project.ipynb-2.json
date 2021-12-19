@@ -1,0 +1,1685 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 156,
+   "id": "c3ffae63",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import tensorflow as tf\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import os\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "from tensorflow.keras.utils import to_categorical\n",
+    "from tensorflow.keras.preprocessing.image import load_img, img_to_array\n",
+    "from tensorflow.python.keras.preprocessing.image import ImageDataGenerator\n",
+    "\n",
+    "from sklearn.metrics import classification_report, log_loss, accuracy_score, confusion_matrix\n",
+    "from sklearn.model_selection import train_test_split"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "abf0396b",
+   "metadata": {},
+   "source": [
+    "# AI Project Mathematical handwritten symbols prediction"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f3cf5c4b",
+   "metadata": {},
+   "source": [
+    "# Divide into training and test datasets where we fetch them from a file called dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 102,
+   "id": "0fba0daa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "directory = '../drissjd/Desktop/dataset'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "d5321361",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['beta', 'does NOT belong to', 'for all elements', 'Set of integers', 'division', 'mu', 'mul', 'R numbers set', 'belongs to', 'pourcentage', 'left-bracket', 'almost equal', 'intersection', 'sigma', 'pi', 'substraction', 'equivalence', 'dec', 'equal', 'union', 'fi', 'omega', 'alpha', 'integral', 'different than', 'addition']\n",
+      "26\n"
+     ]
+    }
+   ],
+   "source": [
+    "Name=[]\n",
+    "for file in os.listdir(directory):\n",
+    "    if file!='.directory' and file!='.DS_Store':\n",
+    "        Name+=[file]\n",
+    "print(Name)\n",
+    "print(len(Name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "1b4194f8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "N=[]\n",
+    "for i in range(len(Name)):\n",
+    "    N+=[i]\n",
+    "    \n",
+    "normal_mapping=dict(zip(Name,N)) \n",
+    "reverse_mapping=dict(zip(N,Name)) \n",
+    "\n",
+    "def mapper(value):\n",
+    "    return reverse_mapping[value]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dc528879",
+   "metadata": {},
+   "source": [
+    "# most of the image go to datasets and 1/5 go to the test sets quite similar to decision trees but here a neural network will be built later\n",
+    "# only jpg images are supported here but png images will be used in the application later "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "e4dfe065",
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "97\n",
+      "134\n",
+      "215\n",
+      "102\n",
+      "557\n",
+      "111\n",
+      "567\n",
+      "175\n",
+      "132\n",
+      "89\n",
+      "115\n",
+      "205\n",
+      "105\n",
+      "255\n",
+      "153\n",
+      "624\n",
+      "120\n",
+      "624\n",
+      "630\n",
+      "97\n",
+      "134\n",
+      "161\n",
+      "178\n",
+      "350\n",
+      "106\n",
+      "567\n"
+     ]
+    }
+   ],
+   "source": [
+    "dataset=[]\n",
+    "testset=[]\n",
+    "count=0\n",
+    "for name in Name:\n",
+    "    filename=1\n",
+    "    path=os.path.join(directory,name)\n",
+    "    t=0\n",
+    "    counter=0\n",
+    "    for im in os.listdir(path):\n",
+    "        if im[-4:]=='.jpg':\n",
+    "            counter+=1\n",
+    "    \n",
+    "    for im in os.listdir(path):\n",
+    "        if im[-4:]=='.jpg':\n",
+    "            image=load_img(os.path.join(path,im), grayscale=False, color_mode='rgb', target_size=(32,32))\n",
+    "            image=img_to_array(image)\n",
+    "            image=image/255.0\n",
+    "            if t<=(counter-counter/5) :\n",
+    "                dataset.append([image,count])\n",
+    "            else:   \n",
+    "                testset.append([image,count])\n",
+    "            t+=1\n",
+    "    filename+=1\n",
+    "    print(t)\n",
+    "    count=count+1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "ca5e08ad",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data,labels0=zip(*dataset)\n",
+    "test,tlabels0=zip(*testset)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "61ca2f37",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labels1=to_categorical(labels0)\n",
+    "data=np.array(data)\n",
+    "labels=np.array(labels1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "d901e07e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tlabels1=to_categorical(tlabels0)\n",
+    "test=np.array(test)\n",
+    "tlabels=np.array(tlabels1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "232c7ccc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "trainx,testx,trainy,testy=train_test_split(data,labels,test_size=0.2,random_state=44)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "ddaf3a2b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(4240, 32, 32, 3)\n",
+      "(1060, 32, 32, 3)\n",
+      "(4240, 26)\n",
+      "(1060, 26)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(trainx.shape)\n",
+    "print(testx.shape)\n",
+    "print(trainy.shape)\n",
+    "print(testy.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "e8b188c1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "datagen = ImageDataGenerator(horizontal_flip=True,vertical_flip=True,rotation_range=20,zoom_range=0.2,\n",
+    "                        width_shift_range=0.2,height_shift_range=0.2,shear_range=0.1,fill_mode=\"nearest\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5c708163",
+   "metadata": {},
+   "source": [
+    "# we use tensor flow pre built library function tf.keras.applications.DenseNet201() to build a pretrained model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "8090e6f5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pretrained_model3 = tf.keras.applications.DenseNet201(input_shape=(32,32,3),include_top=False,weights='imagenet',pooling='avg')\n",
+    "pretrained_model3.trainable = True"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "35e7ded9",
+   "metadata": {},
+   "source": [
+    "# we set inputs first then the 128 node in the black box layer and multiply it by the pretrained inputs to set up the bias correctly. The the outputs are 26 nodes but multiplied by the x3 value to set up the bias and activation functions behind the screens"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "a1d73151",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "inputs3 = pretrained_model3.input\n",
+    "x3 = tf.keras.layers.Dense(128, activation='relu')(pretrained_model3.output)\n",
+    "outputs3 = tf.keras.layers.Dense(26, activation='softmax')(x3)\n",
+    "model = tf.keras.Model(inputs=inputs3, outputs=outputs3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c637bfea",
+   "metadata": {},
+   "source": [
+    "#  we compile the model using the function .compile() using pre built arguments that help a lot with an optimiser a loss detecter and an accuracy value detector also"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "bf67d63f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1abe4d4e",
+   "metadata": {},
+   "source": [
+    "# Model.fit build the neural network using the training and test data in 10 iterations in order to optimize the resulsts using the gradient decent as we saw in class"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "a6318401",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/10\n",
+      "133/133 [==============================] - 81s 513ms/step - loss: 1.4028 - accuracy: 0.6106 - val_loss: 3.2230 - val_accuracy: 0.4415\n",
+      "Epoch 2/10\n",
+      "133/133 [==============================] - 66s 498ms/step - loss: 0.8493 - accuracy: 0.7521 - val_loss: 6.8364 - val_accuracy: 0.0792\n",
+      "Epoch 3/10\n",
+      "133/133 [==============================] - 62s 467ms/step - loss: 0.6248 - accuracy: 0.8189 - val_loss: 2.2646 - val_accuracy: 0.4783\n",
+      "Epoch 4/10\n",
+      "133/133 [==============================] - 59s 440ms/step - loss: 0.6498 - accuracy: 0.8052 - val_loss: 5.7213 - val_accuracy: 0.7274\n",
+      "Epoch 5/10\n",
+      "133/133 [==============================] - 58s 439ms/step - loss: 0.5157 - accuracy: 0.8387 - val_loss: 1.4221 - val_accuracy: 0.6802\n",
+      "Epoch 6/10\n",
+      "133/133 [==============================] - 59s 441ms/step - loss: 0.4405 - accuracy: 0.8672 - val_loss: 0.3635 - val_accuracy: 0.8821\n",
+      "Epoch 7/10\n",
+      "133/133 [==============================] - 58s 438ms/step - loss: 0.3852 - accuracy: 0.8809 - val_loss: 0.5847 - val_accuracy: 0.8358\n",
+      "Epoch 8/10\n",
+      "133/133 [==============================] - 60s 453ms/step - loss: 0.3573 - accuracy: 0.8884 - val_loss: 0.6583 - val_accuracy: 0.8472\n",
+      "Epoch 9/10\n",
+      "133/133 [==============================] - 60s 450ms/step - loss: 0.3521 - accuracy: 0.8969 - val_loss: 0.6204 - val_accuracy: 0.7962\n",
+      "Epoch 10/10\n",
+      "133/133 [==============================] - 61s 462ms/step - loss: 0.3085 - accuracy: 0.9031 - val_loss: 1.0149 - val_accuracy: 0.7698\n"
+     ]
+    }
+   ],
+   "source": [
+    "his=model.fit(datagen.flow(trainx,trainy,batch_size=32),validation_data=(testx,testy),epochs=10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9ca8252d",
+   "metadata": {},
+   "source": [
+    "# we see here the classification report and confusion matrix   \n",
+    "# the report show how accurate is the prediction model according to each label from 0 to 25 according to the test data that was randomly distributed at first"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "d921335d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "              precision    recall  f1-score   support\n",
+      "\n",
+      "           0       1.00      0.11      0.20         9\n",
+      "           1       0.25      1.00      0.40        20\n",
+      "           2       0.72      1.00      0.84        29\n",
+      "           3       0.35      1.00      0.52        12\n",
+      "           4       0.99      0.87      0.92        90\n",
+      "           5       1.00      0.67      0.80        21\n",
+      "           6       0.61      0.20      0.30        99\n",
+      "           7       1.00      0.94      0.97        33\n",
+      "           8       0.91      0.34      0.50        29\n",
+      "           9       0.94      0.83      0.88        18\n",
+      "          10       1.00      0.26      0.42        19\n",
+      "          11       0.89      1.00      0.94        25\n",
+      "          12       1.00      0.26      0.42        19\n",
+      "          13       0.85      0.76      0.80        45\n",
+      "          14       0.94      0.81      0.87        21\n",
+      "          15       0.98      0.99      0.99       107\n",
+      "          16       0.75      0.94      0.83        16\n",
+      "          17       1.00      0.68      0.81        90\n",
+      "          18       0.82      0.94      0.88       103\n",
+      "          19       0.60      0.80      0.69        15\n",
+      "          20       0.67      0.71      0.69        14\n",
+      "          21       0.75      0.96      0.84        25\n",
+      "          22       0.96      0.83      0.89        30\n",
+      "          23       0.98      0.96      0.97        56\n",
+      "          24       0.19      0.71      0.30        24\n",
+      "          25       1.00      0.87      0.93        91\n",
+      "\n",
+      "    accuracy                           0.77      1060\n",
+      "   macro avg       0.81      0.75      0.72      1060\n",
+      "weighted avg       0.86      0.77      0.78      1060\n",
+      "\n",
+      "[[  1   8   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0  20   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0  29   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0   0  12   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   6   0   0  78   0   1   0   0   1   0   0   0   2   0   0   1   0\n",
+      "    1   0   0   0   0   0   0   0]\n",
+      " [  0   0   2   3   0  14   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   1   0   1   0   0   0]\n",
+      " [  0   0   1   0   0   0  20   0   0   0   0   0   0   0   0   0   4   0\n",
+      "    0   0   0   0   0   0  74   0]\n",
+      " [  0   2   0   0   0   0   0  31   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0  18   0   1   0   0   0   0  10   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   1   0   1   0   0   0   0   0  15   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   1   0   0]\n",
+      " [  0  12   0   2   0   0   0   0   0   0   5   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0   0   0   0   0   0   0   0   0   0  25   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0   1   0   0   0   0   0   0   0   0   0   5   0   1   0   0   0\n",
+      "    0   8   0   4   0   0   0   0]\n",
+      " [  0   1   0  10   0   0   0   0   0   0   0   0   0  34   0   0   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0   0   3   0   0   0   0   0   0   0   0   0   0  17   0   0   0\n",
+      "    0   0   0   1   0   0   0   0]\n",
+      " [  0   0   0   0   0   0   0   0   0   0   0   0   0   1   0 106   0   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0   0   0   0   0   0   0   0   0   0   1   0   0   0   0  15   0\n",
+      "    0   0   0   0   0   0   0   0]\n",
+      " [  0   0   0   0   0   0   7   0   0   0   0   0   0   0   0   2   0  61\n",
+      "   20   0   0   0   0   0   0   0]\n",
+      " [  0   2   0   0   0   0   0   0   1   0   0   2   0   1   0   0   0   0\n",
+      "   97   0   0   0   0   0   0   0]\n",
+      " [  0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0  12   0   3   0   0   0   0]\n",
+      " [  0   4   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0  10   0   0   0   0   0]\n",
+      " [  0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   0   0   0\n",
+      "    0   0   0  24   0   0   0   0]\n",
+      " [  0   0   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   3   0  25   0   0   0]\n",
+      " [  0   0   0   1   0   0   0   0   0   0   0   0   0   1   0   0   0   0\n",
+      "    0   0   0   0   0  54   0   0]\n",
+      " [  0   6   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   1   0   0   0  17   0]\n",
+      " [  0   0   6   0   1   0   5   0   0   0   0   0   0   0   0   0   0   0\n",
+      "    0   0   0   0   0   0   0  79]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "y_pred=model.predict(testx)\n",
+    "pred=np.argmax(y_pred,axis=1)\n",
+    "ground = np.argmax(testy,axis=1)\n",
+    "print(classification_report(ground,pred)) \n",
+    "print(confusion_matrix(ground, pred))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7af93f02",
+   "metadata": {},
+   "source": [
+    "# Here we test with foreign data in the applicationSet and see how accurate the neural network is "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 194,
+   "id": "147c3fa0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABdElEQVR4nO2Wva6CQBCFZ4iJJS2VHR2llaG04RV4ARN7OnsKH8TSRzAECxoqCqk2sTMGCBGMVHKLTe6fMrvche6eijAz+23OzMJi27YwpjQiFscxIo4IiKJIcXUBoCgKIoqI1+t1RAAA7Pd7JUBVVXRxnudKgMfjQRff73clwO12o4uFCQKAsAdCDwEAhj1om82m/SnkgKZpGGOXyyXLsjRNoyg6HA5N0/yB8XvHbbfoBACwbZs/l2V5Pp9Pp9Nr2kTFkLqu+YOu67quv82hmiyUjIcCgKYpnUQxwHEcIvppEaEJAGy3W8YYIhqGMZvN5vO5ZVk8vFgsiGKpMet1DlzXPR6PMjP2NWz0mDLGPM+T3wEAIGIPwOvL3W43nU6FrogBSZLQDnxf6/l8BkGwXC5N01yv11IA3/flAYQ6xzQMw17Wd7ak7Zgifp/oisokcCl9KmT0DxDq/f+A36hWqxVRKWwvFzVFkkvQ6rRokNUpwFD6ALCmE2ImNcdNAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164B55F10>"
+      ]
+     },
+     "execution_count": 194,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/#.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 195,
+   "id": "b033dda0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/#.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 196,
+   "id": "5442e8df",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is different than.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "9f8aeecd",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABiElEQVR4nO2WsW7CMBCGfzsgZoTERFkQlVIGBjoxscEj0Adh4wUYMjGz8ww8S5FCqFpQK8SQJcU+d0ihqeMkRKJDpfzKkvy++3Kx7xQmlQAAgCkOg5RiKtmFYhS9ZYoBLPrEHHZDFYBMlZIMpZRlWSmRRJTiXmSuoN/vh9krlYr3spFKUETfkZzbtp1NkEqElxbfarWIiEhq7kXdblfLIJUgktoyHdDpdAAsFovzgkQAES2XSwD2g50CYFqjcc7L5XIQBOcKMxqtfd9eP68jSfRGMwB+7152J1us1LhrbDz3DwHhThgBhjDO8zVH77GX4uq5ms1mruwAxk/jHADXdZGziGq1mgMA4HQ6AVitVlcChBD5AGEPj0ajKwG73S7F1U/RD5lzAETy9qco1Hw+z3z36XQaZv8UQeKi+CzShpLRHQ6H8QwZo+J9/+H7vu/7x+Nxu916nnc4HBzHedu/1uv16Ce68ozNZrPJZIILIL3EeGVJYozVarXBYGAedjEVfxUFoAD8A8AXhUuy4xrwijoAAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x157DB44F0>"
+      ]
+     },
+     "execution_count": 36,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/sigma.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "f9bf2d2f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/sigma.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "id": "3c66aa1b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is omega.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "id": "3c116589",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAAzElEQVR4nO2V0QqCMBSG/yNemL6APdPAXsC38qmKHqO6lzWxMc+6EK3mKJQCg30Ig53DvjORX2JmvEIWlgCwJWefAHKaLTEAshEm9CVP4bvME0TR7IFWdoMgCIIgWKcg7hetdZIkTi3f5ufLydkUQlRVVde1lFIpdW1k2950q40xALIsK8vyuZ/GuF4QZF7GA9245oHNcJViVxyO+86a/mHunE5mHkoPHF88HaFRjfeHs4z//4qCIAiCYI2CNE1n9XvC7g3TsPzIz1/RHSmXciJ/z5/qAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x157DC2B50>"
+      ]
+     },
+     "execution_count": 39,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/plus.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "id": "edd41435",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/plus.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "id": "04dbf56b",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is addition.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "id": "c9f3fa70",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAB5klEQVR4nLWWP68BQRDAdy8huAgrSCQSepVOolfoqTU+g0Kv0GlUvoAvoKDXqVRCoyMuXCHRuNtXzMvm3O3OrX15U83Nn/3NztzeHuWck/8UC/GtVisakMFgYELgEZlOp7FZtm1HE6XyAajVaio2PHa73RDpdDrhAKqaAaUfrtAjWIKlqPaKzQAXsbMQzASAFMg5b7VahJBOp4MVIhlOwDWfz5FIgZe7dACFQgEHQPxoNIratYYMLVZF4jHmQ9YUXUC1Wo2NuV6v5oBKpYJ4oT/lctkckM1mVS5Y9/l8yt06bxFEuq4bDdtsNjHr6ANAlsslGHe7XWyVXwD6/b6qRcjqnHPdGRSLxfv9DrrjOJ7nSfcXFV1AOp1mjL1eL4BZlm6iblwmkyGEpFIpKBn5fP4JACIY7/f7XwCCkUgkHMcxB9xuN6Hbth3yAqNUKm23W0PA+XwWuvQkA6Pdbi8WCxPA8XgUOmNMGgOM4XA4mUy+BhwOB6HncjlVGDDG4/FsNpO7VSe51+sJPfb3BFZbr9dhO5LQaDSE/ng8cIBg+L4fNGJXpmVZnucRQvL5vOu6SDODWeTz4sRm4Ps+KPhtE00JnnOtg1av1zUBlNJms0kISSaTvyakoYwx0C+XS+wAQrn7/R70H+TtdafapJtJAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x1552F1A60>"
+      ]
+     },
+     "execution_count": 42,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/R.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "id": "ae7e1f18",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/R.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "id": "8519dc4c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is R numbers set.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 185,
+   "id": "670eebc1",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAAl0lEQVR4nO2TsQ0DIQxFIToq9mQNWAmJDdiABZBuAigQxhROczldEaWIDqWIf2Us6z/bMpKIxEo9lroz4D8A2xlJKe8yvZ7+8gkkf7SfA7a32d57zrm1BgBjjDknIgJArTXGWEoJIXwwtdY6544HERFRSunGrpVS9NKxon3fv/PSWhtjvPd0ESKeBXymDGAAAxjAACGEeAJtj1abKm+BvAAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164C60250>"
+      ]
+     },
+     "execution_count": 185,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/=.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 186,
+   "id": "d7d0a537",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/=.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 187,
+   "id": "fc6af8d7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is equal.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "id": "6343ea24",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABrklEQVR4nK2UMe4BQRTG30wrSDiAUiIUShfYuIPCETQbiQNINArlFgpEsoU4gAalSNhE6QAqkVha71+s/xizY3dmd15l37z5ft/3YpcgIhit+/2ey+XYIwWAcrlcr9eNqFNK8/k8IWQwGLxbj8cj+NFqtTBddbtdHhY0gV+R53lpAEKaD4A/W61WRtSZzhuw3W4FslZNJhOp/Q8AESmlwZllWSnt73Y7CeB8PrMJ3/fV1S+Xyy/7XwBE7HQ6bOj1eiWzL57+mi4UCirq8/mcV6/VajGA8XjMptfrta795/MZAxDuRKsfj8fo/cgBYV/SajabQud0OqkC2u22CiPW/k+AYgi+ZrOZHsC27fT2owCIyH/DS6USf7RYLHj1w+GQBIDfi9psNqxfrVZV7McD+v2+VIhvFovF5ABBazgchpuj0SgV4Hq9CiF6vZ7ifpQAiJjNZpnccrnMZDKGAb7vi//K/2o0GgYAiFipVKQA13WjLxJUfmkJIeFm7HWqqA4A+/1efZiVRgKQhTCZAAAcx9GaB90EEAphOEGC0gZMp1P+8Xa7Rc9rrwi+txR7/Q+RZMQKgUT/ugAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x1536F7580>"
+      ]
+     },
+     "execution_count": 48,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/A.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "id": "ca8ca580",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/A.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "id": "5196589a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is for all elements.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "id": "4fe919db",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAAB0ElEQVR4nNWWvarCQBCFd5PrWqQUtBAEG5uUop1YW/gUFjY+gI21hU9iY2FnUtkETGMrCIIQ0ELEItgYsreYsK7ZJG7izQVPlUx2vzOTmfxgSinKU0qu9P8w+GFHGGP5bf1+fzabTafT2+3m+z7GmBCi6/pkMlFVlV+J+R6k8pARpVQJnaeSYRitVosnOI7T6XRiK8gmVjdDQUTTNNd1P20ysLbbbYheLpdd1w1sMwuI3W43FOGxGQ3W6zWADMNIoFNKn2MqL03T7vc74m46iuoEKLVBJAiCqqp6nhdan6LJx+MRQNVqldE3mw0Em82mSA8SkZFlWbB+MBiw4Pl8hqBlWXEbpQwIIWI2lUpFJsX3PUi46Uhoqag3PRBB1+sVghhLvQWSDADUaDQo95SWSiWE0OVy8X3/LT1ITdRut4Ori8UCIo/HI3lLnCJW7/d7ALXbbYjYth3Uqyip6BEGjD6fzyFSLBYzJM700ijP8wqFAhJevEhiWuIU8UX7Qzripwhwh8OBPx0Oh5/QnwZs5ur1OuJydxynVqvhNCKEjEajZ96QYB6f+5cKKKXL5dI0Tdu2T6cTDMB4PI4tXFF6vd5qtYqdzlAF+en7fx2/3+AXwKsTFQizMxAAAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x1552FB100>"
+      ]
+     },
+     "execution_count": 51,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/Z.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "id": "1b4fa730",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/Z.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "id": "5426819c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is Set of integers.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "67ca9111",
+   "metadata": {},
+   "source": [
+    "# The mu here is written with a long line on the left which is different than training and test sets so the training algorithm gives priority to the symbol that looks close enough "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "id": "e4897aca",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABX0lEQVR4nO2VMbJFMBSGT4yhoFRqlFR2oFVYgQ0o1HZgB6zATszYgUJlAQqjRuEWmcnNzUsicecVb+b95Tk53x/nOMClrKqqAED9PJZGAQBwDbIsE6U0DJqmEVFw3PO8rwwwZRgGJu44juT6qgZxHMuvLzFA9CGREEKEQsdt2z6OAwAsy9r3nV97a0Do53mapqliTMuQ02kx9DAMlcrk3ZecJPG+72UESS7PcwDYtk1ucHNFUWJZFgAoy/LirViSJDi4rqvcQDhkPEB8yDAM+Jykynix+EMmdJr1gM43oOk/FUXRLfSDxoC4dPrK9AOpPIHSJgOvUYoGGoumxdU2uK6rKApdOqi3iC2Tvgi0nrRIS/8Gf9wgCAJuHCH0Xkz5x1Yk/KsQldOph3sA4m8qE3/eommaCNF13TRNfd8n9Lqugfg81jzPXO9xHN/t+sYAq21bgu66jsk+n4Gifn0PXrt9zn45Qi4eAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x162B437C0>"
+      ]
+     },
+     "execution_count": 54,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/mu.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "id": "2c381733",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/mu.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "id": "d38e0156",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is left-bracket.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8a3744e9",
+   "metadata": {},
+   "source": [
+    "# when mu is written correctly"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "id": "af166d2d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABrklEQVR4nO1WO6rCQBS9E58OiPipJJVlOiG4BTt7NyAuwMpOBcEdCK5ACFgo2BprK7t0YmUrCBZ+Z15xZQxxMtG8BF7hqS73c07m3GQI4ZxDnNBiZf8KRCOQzWZrtVp4Ba6EZVl+bbZtAwClVM0QcIL1eu1X6na7AHA+n9UMAQKr1QqD+/3uKTmOo55FEPWHRgjBYL/fFwoFdymRSDDGAEDN8O5bdL1ePRlkRwwGA3FWLxT7GY/Hos1xHE/1lSqdTr+SqASSyaQYns1mgQLlcvmV5MfPE8aY25bNZiNt03W9WCymUinTNEej0QcWVatVd1ulUpGeoNPpKDzwtajZbOK8YRimaWJ8u91Ew3a7xeRutwsjIB78eDwKowghjDFsyGQyagNUApPJBIc1TcNMv9+XLqDVaoUREPO2bYtko9HwsJdKpUB2icByuVTsfzgc1ut1wzAWi8U77BIBwW5Z1psUHwi0221kn06nkbBzzp+X3eFwyOfzAEApPZ1O0q2GwFNAXJyXy8V9SfwRj9uUUorBfD6PkB3A9arkcrlerxeV9ZIdxIR/8NvyFYhb4BdXJMODiFB2PgAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x162B59940>"
+      ]
+     },
+     "execution_count": 82,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/mu2.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "id": "bec0ac85",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/mu2.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "id": "efb6ed06",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is mu.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 57,
+   "id": "3fa7e053",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABTElEQVR4nNVWPdJEQBDtMUVKldQJcAKJG7gGF5C4isgNJI7hICJKphS9wXzVdmdZvp0R7ItGm3mvfxkYxxF1I4oiWjMAAABEBE1g7IXT0MV7hJ8VME3zXoGiKMTiriJP02RZ1o0CRGiI56ZpdAnIyLIMAHzf1zJi8zwLWrJsvmsR8H1fYmPDMDiOA5rKII0xABi2bavzSkiSZJNERKnuKnin0jloQRDsWElNvcKCp6qqZ6POFO3ybCmq61qFvSzL/ReI6HkerRXzE8exbEfEvu8VBdI0PWJgQlyxDO/zRXhp0zzPvxMQaNt2R/s5gl0XTsE5X9f16OxfBGEY/peXINipUyQwkv2uDKehy58KOnCKJEkuJZb6qes6MnLOP9z46K8isK7rhw7eUiS2cs4vRnDuOwBIKTIMAxFd171CvSzLlYKxK5tU8LNXR8IDVyqvFs3kx78AAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x162AE4FA0>"
+      ]
+     },
+     "execution_count": 57,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/U.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 58,
+   "id": "c142667e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/U.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "id": "e862bf3a",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is union.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e3e2eac2",
+   "metadata": {},
+   "source": [
+    "# Mistakes the prediction algorithm does when the image is bigger much than 32x32 or close to another training set of images size and has the same courvatures "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "id": "2c04326f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABG0lEQVR4nM2Wv65FQBDGv7m5UenwGmqtRKnyCloP5BV4KJU/iQghaBR7ir05xTmHM9bdxFcJM/sz+80sJISATv0w44ZhCILAMAwiIiLLspqm4SQSpwLTNJdleb/PyWVV8HH1NE05ub+cICk1t75X0LYtANu2FVZnAfI8B+B5ni5AURQAtm3TBZjnGcC6rroA0zQBGMdRF0D2aN/3ugDS3rIs1QCsSSYi6JuDKIrkRV3XCoCjCuSLP/XPFVRVdX31v8w9vUzvQeSBvqclSXIFcIMuuqgTALXT4gQgjmMFwAkPoGTDPTzwfV8ZwNqiruscx4G+LXp+8YkoDMNzpx534g+VZdleItdkIcTH3y8p13X3HrE8uKJ7tOkVPQBbk2BMLnEiFwAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x15B2E4100>"
+      ]
+     },
+     "execution_count": 69,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/{.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "id": "07ba02b2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/{.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "id": "6579f510",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is belongs to.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "efee840a",
+   "metadata": {},
+   "source": [
+    "# when written proprely at the proper image size"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "id": "23741091",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABUUlEQVR4nLWWMY6DMBAAl+MMiCqti3wgH6CiQKKhiaho8gtewhNoI+UXPCANVPRIUFBRAAGcwjrdHSHYsWEqC6131mbBVgghwEJRlNkTnlmUb844AMAYa5q26JMS3G43OiiKgj/vL4SF67qckYt8MSvI81yk8B/YgmEY9hVIwhbwd+QiCnM+bUqEUN/3AgLeLfJ9XyD7B4IgCMQEjC3qus4wDABo21bXdQEBYwVJktCBWHa2IE1Tsby8grIsJQVv/zBRFCGEmGFM/s30PO+1gtPp1DTNBoJxHP/mdRznfr8L510QEEJmJ0kYhhsLCCFxHM+2CGO8pYCSZZlpmvJv+K2AYlmWvGDtO6iqiqvTV1kTTNO0r2AT1gTH43Ffwfl83ldg2zYdEJljeaXDXi8s1+t1yzZVVfVyuYjXDgA8twoAeDwedV0DwOFw+PRo4xLI8AQC2R4KHvxySAAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x162B4B0D0>"
+      ]
+     },
+     "execution_count": 78,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/{{.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "id": "db99d8d5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/{{.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "id": "ea9361d1",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is left-bracket.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 197,
+   "id": "4796defe",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABDklEQVR4nO2Wuw2DMBCGf0dADx1ehSlYgRGYhBlomICCAdiBCSgxBRUSXApLFooicuc8FEX5K4Pu/PleshURgSellF3wXQBcpLvb9bZtLwZYERERpWkaBAHThWXXdR2Asizt5ziO/DMpTkJtfkSpd5Kl6A/4XUCWZQDatvUAsNrUGJMkCbw6lQXAE6PwHTX4BEBrDaCqKjGBeOr7XmTvxC0yfOssrsG+7+8FFEUhshekKI7jeZ7xpjsZwDAMfGMnQQTwqvODCIwx/L3u6uzSt+dd1zUMQ2/AWQRN0wCIomhZluP/aZoEhPM5dGZ1XTNdxJN8fNM5AD+Ax21KRHmeA9Ba34TFkaxNPfQ194G3rsR+EWhdR2MCAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164C77E80>"
+      ]
+     },
+     "execution_count": 197,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/integral.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 198,
+   "id": "3830872d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/integral.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 199,
+   "id": "4790ddb4",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is integral.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "id": "aa0e618b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABjUlEQVR4nNXWMa6CMBgH8PJCNHFEJ0djgqsh8QC6ujFoGF2cOICjJ/ACmNALcANmJxM9ATMmYlINMEj6hiag4legaF7efyJpv+9XSgNIlFL0zfxAA51OR3pOq9WyLKuyQHNJkoRfMhqN8lVQ3gBpI8MwLpcLIWS/3xuG8cLYti0CNBoNVr/ZbPKz7/e7pmmpYZpmNWA2m7HK+XzOqbndbqmxWq3KAnEcsxpFUQrXRR920nGcUkC73YYee6FBCCkAwjBkUxeLRXnger1yTuMToKpq1eWzYIxZ4Xq95gFs0mQyqQrQh4MHAq7rshlhGAoAvu+z8u12+x4YDodi+5N1QQgh1Gw23wNsuN/vCwO6rkNLzF52y+USiWY8HkNDGTCdToWBXq8HAp7nsavBYCAMdLtdENjtdsJ908iyDAKHw6E+wEm2Rd8Czudz/S5RFIEAZ6x8giAAgcIvcJnw7kCSpPrA6XQCgfrdEULH4/GfA4QQEKB/9etYKbxT9BGAk88cU04T8C1YKRjj9MfnJb/UD8PDrRuttQAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x15B2EF1F0>"
+      ]
+     },
+     "execution_count": 87,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/inter.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "id": "01f7e428",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/inter.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "id": "e92e4f25",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is intersection.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "id": "f0ec34de",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABSElEQVR4nN2Wva6CMBTHD6SEBhd3O+DQpGgCDCY+ABMzD+Cz4TP4NqSBgcnEuRGQ3oGECPEiF9vB+9/a8/FLT05Pa0gpQadMrdn/BcB4XiCECCHb7dbzvP1+v9vtKKWbzUYZYIFs2yaEuK5LKfV9PwgCxpjjOJ0VY2zYtt173+/3D3kjSSmNUZueTqfz+dzZuh0hBOc8z/OiKMqyvF6vt9vtcrkAgGmaj8djGgByKIRQb5tQ53M4HKbdpJTjLmqaBgDiOFZQIAD4rU2jKJoTvF6vFwIwxnMAhJCFgJlijOkFHI9HvQDf9/UC+hv7Z8BqtfoE/B4QhqEqwGBUVFXVjaa2bQ1jag52ViHE24YenCDLsud4JRoAOOeq8r4G1HWtF6DjhzEAKCz9a4AOfX+J0PMiSZKZh0jTFAAsy3rrOX70lev7v47aAT9ttawtOsZ9rQAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x1598C6070>"
+      ]
+     },
+     "execution_count": 90,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/pi.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "id": "28f660cb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/pi.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "id": "73bb038c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is pi.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 174,
+   "id": "017bd543",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABfklEQVR4nO2VMauCUBTH730pOIjQGuTi3OIoFLg09CVqDvoKIs5+gSYHwc2luZxCaArSpYj2WpoCHeS8QZDbVa/1eA2P538895z/75zDvYoBAH1SXx91bwH/A8AhhLIsW61WRQhjPBgMFEX5HQIAPB6PyqPL5QJNOp1Oo9FIEARRFGezWZIkVAILgBC63+911svlsrLE8zwaUFYUReSIlK7XK3sr5/O5AQAAvu/n2bZtk/HJZEJ6hWFYHKVpmgcxxs0AAOh0OuQQ+/2etHZdt1ximiY1Nwuw2+0KL57nC+ter1dX4jjOGwCo+tBuNhtG/mKxeAmQJMl0OqWsLctid0M2VA2I43g4HNbdjfl8znZXVTXP9H3/CVDnKEnSdrulEsbj8eFwoKwNwygSut3u00xlgKIo6/WashAEoa4PUrIs00sDAF3XDcMwTZPxbgHgeDz2+/06a47joigqV2HGihgKgiCO49vthhDSNI16faR+CHhdf/+H0wJaQAtA6BukHs69g+uFMgAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164779FA0>"
+      ]
+     },
+     "execution_count": 174,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/alpha.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 175,
+   "id": "a2a6f735",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/alpha.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 176,
+   "id": "79c2cb2d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is alpha.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 180,
+   "id": "bcbb3ae0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABg0lEQVR4nO2Vr6+CUBzFL3fPjc1No5EEiWY0mGQjEwza7cxiMmMgERgbw2SyODf8D9hIJovMQiAYDWwUvy/whgjIz+f23uaJl8P53C/3AAQAoHcKvzX9A/gTgK/M1cPhYFnW+Xz2PI8kSZZlV6tVq9WqQ4CYHMfp9Xo5Zp7noaIeAJIkS+5pNBpVBvT7/ej+7Xab9tm2TVFUHCPL8qvQ+KA/AI7jEELz+bxwRwzDxDGiKCYMpmkihAiCeAIAgGVZhemRBEF4NU24st/vk4Cqcl233W4njidq2oNXGxAqCIJ0C8bjcWQgIPU19Tzver3ebjff94MgwBh3Op3hcJhfrcViIUkSAMxmM1VVHxcMwxAEoWRHGYa53++VRiwTm6HpdFoZMJlMdF0/nU6ZPtu2B4NBArPb7YoBFaYFAIDNZtPtduOY/IdWv0VxBsZYUZS0xzTNRjVdr9fFx9UEEGq5XObkZ7wHtXU8HjVNu1wuvu9jjGmaFkXxNwGZ+v//5A/gA2iub6JaxSQBm081AAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164C60130>"
+      ]
+     },
+     "execution_count": 180,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/almost=.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 183,
+   "id": "17c47076",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/almost=.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 184,
+   "id": "231f539f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is almost equal.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 191,
+   "id": "286f8320",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAABz0lEQVR4nK2WvcrCMBSG01IQFDepBZ3UwUkUwcGlk5N4AV5EcdDdC3Dp3htwcdLdegUOQjcFQQpFcHFQsCXfEIj5+mNO2p4plJP3OT/JSSWMMRK3z+fj+z77RZblQqEQ44rBdr1ea7VaErLdbsfuUoAhq6p6v99FkhTJQJZl6j+ZTBzHgefNBxwOByI9Ho/hut/guCnu93uy2O12KSrEBwRBkEJXAKCqahYAvwfn85l4+r6fogegU0QAy+UyBUDCgJusKArpBMQ5ZPweIISOxyNZaJomCoCOim63S7fM53N4iQRm0WAwYCOr1+s5AzDGpmmyDF3XcwMsFotoeV3XzQFgGEZId7VaAcPiADabDatbLBYvlwtcmgNoNBpUulwuPx4PUelfAEmSqHqKqDkAKt3r9bJIxwM6nQ5RNwwju3oMgKj3+/1c1MOA0+kkND8g9m/Yvd9vsng+n9Frlc7C45qeH8/zsr5lCKHouN5ut2RRrVan0yl3v+M4HI9o1WzbZh1ms1lSfYfDIULItu0fPUh80TRN8zyP/dJqtXRdr1QqQRCs1+vb7cZGKZABNdd1S6XS7wIk/ZJSA51Iy7KazWZIejQavV4v7l7Qo5/F/gBkDoxuZMbiugAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164EE6B20>"
+      ]
+     },
+     "execution_count": 191,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/euro.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 192,
+   "id": "ecd3ef6c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/euro.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 193,
+   "id": "4288d089",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is belongs to.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 200,
+   "id": "8774102c",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAACGUlEQVR4nLVWLcsCQRDeUw5Pi2IxWOWy4C8wGyyCIFiumQWbXSwGoyIaTQZBxI/iD/ALg8iFQ0Q4g6BBPD3ZNwzse+y7t6+eOml8ZuZ5ZmdW9gSMMfqmub7K/gEBURT7/T4vA79hjUYDSEqlkl0OTyCdTkN9r9djFz/RJTtmGAZ1UF3XqZxYLAah/X7/sgDhDYVC4CiKYk3QdR3waDTKYccYM5Y8HA7BabVau90OfFmWrTlEeDab8TbMHF82m4XQarVippXLZQBrtRq/ffaIms0m1US1Wv07QLfbTRUej8enBDDGwWCQsHe7XWsoEokAfjqdADkcDi7X76hFUfxfwM5UVQWWeDwOSL1e/zt2r9frUIBayXq9JkilUsEYZzIZamcvCBQKBSjudDqUnmmagJBb50QAKiVJgp/n8xmQwWBAchKJhEMBcvGv1ysg5LKRnM1mA4gsy68JTKdTqEylUgQcjUYAapqGMc7n89SGXhBgVmKbl0pV1dcEFEWByslkQoXm87mV2ufz3e93ugk+u2maUBwIBOxyttvtYrGwiwqY+yb7/X64LY/Hw/p3fd54NePxGNhzuZwzdoQQ7wSCIIDDPyXfbPtKJpPgLJdLx+wI2Tynl8sFouFwmH8L/jX2iDwez+12Q+8NB4wxona7DezFYvFNdsRc8kd2S4w+gWEYkiQhhDRNe58dIZsl231pfWzJH7Svf13/AI9tcbLun6noAAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164C47970>"
+      ]
+     },
+     "execution_count": 200,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/%.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 201,
+   "id": "f689868d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/%.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 202,
+   "id": "8ea738b6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is pourcentage.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 203,
+   "id": "53ebad7c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAABX2lDQ1BJQ0MgUHJvZmlsZQAAeJxjYGDSSSwoyGFhYGDIzSspCnJ3UoiIjFJgv8/AxSAJFJRlkElMLi5wDAjwAfIYYDQq+HaNgRFEX9YFmXV4hlnUBKa81fYPP/oE/TZbgKkeBXClpBYnA+k/QJyXXFBUwsDAmANkK5eXFIDYE4BskSKgo4DsJSB2OoS9A8ROgrDPgNWEBDkD2Q+AbIXkjMQUBgYmkPk6SUji6UhsqL0gIBKUmqyn4BkSqhuk4BSiZ25gqWtKwNmkg5LUihIQ7ZxfUFmUmZ5RouAIDK1UBc+8ZD0dBSMDQ6CVoLCHqP4cCA5TRrEzCLH8RQwMFl8ZGJgnIMSSZjIwbG9lYJC4hRBTWcDAwN/CwLDtfEFiUSJYiBmImSyeMDC8+MDAIC4ANAfIFtlTnGZsBJZn5HFiYGC99///ZzUGBvbJDAx/J/z//3vR//9/FwM132FgOJAHAG6hZrCTss6OAAACjUlEQVR4nK1Wv2vyQBi+azSiZFAXoajU/8GCDgqiCEJ1FPwLSjtZxEGHLl1FcBEVRx0VFMXBVYUuBZ1F3QodlIISIup9w5Uznokm8Xum4733fZ73R+5yACmD2+3W6/UKncWACCFwDRDCqz4EFOHdZe90Oq2K/Rw6uY1UKpXP5ymj1+t9fHy02WwsyyoUlhbQ6/W73Q6vWZbdbrcAAEEQWJZVlLYIdIt2ux2EELObTKbNZiMIAt56f39Xyw4AANTQiT2VSlFGjuM0fEUnAhaLBXNVq1Wx3eVySWajTqDb7WKWWCxGOfl8vv8gINc0hFAwGNQs8DfkXq+HF5+fn1omeXXIHMddyDEQCNxawXq9BgDE43HJJFarleYCTg5aMpmUdJrNZpQFIfTz84NEk2MYxmq1MgxDByOESLxcmXjXbDbX63UlN8TT09MxFiHUbDaVCKjCyQwWiwW2QgghhAaDoVarEdfD4UAFZzKZ39/f8zz2+/1wOHS5XI1G40Tq4+NDMou3t7dIJCK2DIdDtV/RicDLy4vf75ermro/VAiUy2WqcYPBgAzT6XTixdfXl0YBnucxRb1eP/dYLpeUvGoBdPEiarVatwj8neR2u40XuVyOav1gMJCbiiIcpe6O14Y4BY/Hc0sFx2cLz/Mmk4lwkQwYhjkcDhDC8wOhBMd/stFoJAdEfB9g3lAopIH9L1kxstks2eJ5npRSKpW0tUiis8/Pz0QjGo3iRafTUUI3Go2opKVHV6lUqELD4fBkMpHj7ff7iUSCON/f318RQAjt9/uHhwdtbZ9Op9cFjh6KodPpCoUCFS77NiV4fX0tFosAgM1mM5/Px+Px9/e3IAgQQo7j7Ha72+12OBxy4f8AzqSSjPaoWGgAAAAASUVORK5CYII=\n",
+      "text/plain": [
+       "<PIL.Image.Image image mode=RGB size=32x32 at 0x164F7DDC0>"
+      ]
+     },
+     "execution_count": 203,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "load_img(\"../drissjd/Desktop/ApplicationSet/negativeeuro.png\",target_size=(32,32))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 204,
+   "id": "edd34910",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "image=load_img(\"../drissjd/Desktop/ApplicationSet/negativeeuro.png\",target_size=(32,32))\n",
+    "image=img_to_array(image) \n",
+    "image=image/255.0\n",
+    "prediction_image=np.array(image)\n",
+    "prediction_image= np.expand_dims(image, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 205,
+   "id": "00b7956c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction is does NOT belong to.\n"
+     ]
+    }
+   ],
+   "source": [
+    "prediction=model.predict(prediction_image)\n",
+    "value=np.argmax(prediction)\n",
+    "move_name=mapper(value)\n",
+    "print(\"Prediction is {}.\".format(move_name))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "fd551cd6",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
